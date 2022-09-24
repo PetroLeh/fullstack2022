@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 
 import Persons from './components/Persons'
 import PersonForm from './components/PersonForm'
+import Notification from './components/Notification'
+import ErrorMessage from './components/ErrorMessage'
+
 import personService from './service/persons'
 
 const Filter = ({ filter, handle }) =>
@@ -15,6 +18,9 @@ const App = () => {
     const [newName, setNewName] = useState('')
     const [newNumber, setNewNumber] = useState('')
     const [filter, setFilter] = useState('')
+
+    const [notification, setNotification] = useState(null)
+    const [errorMessage, setErrorMessage] = useState(null)
 
     useEffect(() => {
         personService
@@ -48,6 +54,10 @@ const App = () => {
         .remove(id)
         .then(() => {
             setPersons(persons.filter(person => person.id !== id))
+            setNotification(`${name} was removed from the database`)
+            setTimeout(() => {
+                setNotification(null)
+            }, 5000)
         })
 
         }
@@ -67,6 +77,17 @@ const App = () => {
                 .then(newPerson => {
                     setPersons(persons
                         .map(person => person.id !== id ? person : newPerson))
+                    setNotification(`updated ${newPerson.name}`)
+                    setTimeout(() => {
+                        setNotification(null)
+                    }, 5000)
+                })
+                .catch(error => {
+                    setErrorMessage(`Information of ${newPerson.name} has already been removed from the server`)
+                    setTimeout(() => {
+                        setErrorMessage(null)
+                    }, 5000)
+                    setPersons(persons.filter(person => person.name !== newPerson.name))
                 })
             }
             setNewName('')
@@ -76,8 +97,13 @@ const App = () => {
 
         personService
         .add(newPerson)
-        .then(returnedPerson => 
+        .then(returnedPerson => {
             setPersons(persons.concat(returnedPerson))
+            setNotification(`Added ${newPerson.name}`)
+            setTimeout(() => {
+                setNotification(null)
+            }, 5000)
+        }
         )
         setNewName('')
         setNewNumber('')
@@ -91,6 +117,9 @@ const App = () => {
     return (
         <div>
             <h2>Phonebook</h2>
+            <Notification message={notification} />
+            <ErrorMessage message={errorMessage} />
+            <br />
             <Filter filter={filter} handle={handleFilterChange} />
             <h2>Add new</h2>
             <PersonForm newName={newName} handleNameChange={handleNameChange}
